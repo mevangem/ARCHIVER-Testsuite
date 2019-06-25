@@ -1,53 +1,12 @@
 ================================================
-OCRE Test-Suite for cloud validation - CERN
+ARCHIVER Project Test-Suite
 ================================================
 
-This tool is intended to be used to test and validate commercial cloud services across the stack for research and education environments.
-This Test-Suite is being used as a validation tool for commercial cloud services procurement in OCRE (Open Clouds for Research Environments) project sponsored by the European Commission.
+This tool is intended to be used to test and validate commercial  services on preservation and archiving for research and education environments.
+This Test-Suite is being used as a validation tool for  in ARCHIVER (Archiving and Preservation for Research Environments) project sponsored by the European Commission.
 
-More information at: http://ocre-project.eu.
+More information at: http://archiver-project.eu.
 
-.. header-end
-
-Documentation
----------------------------------------------
-Full documentation can be found at: `http://ocre-testsuite.rtfd.io <https://ocre-testsuite.readthedocs.io/en/latest/>`_
-
-.. body
-
-The test-suite executes four main steps:
-
-1) Infrastructure provisioning: VMs are created using Terraform and then Kubernetes and Docker are installed on them to create a k8s cluster.
-
-2) Deploy the tests: Kubernetes resource definition files (YAML) are used to deploy the tests, either as single pods or deployments.
-
-3) Harvest results: at the end of each test run a result file -written in JSON- is created. This file is stored locally.
-
-4) Through a verification system, the Test-Suite can also be triggered from a service running at CERN. In this case, results are then pushed to a S3 Bucket at CERN.
-
-The test set described below is based on the tests used in `Helix Nebula The Science Cloud <https://www.hnscicloud.eu/>`_ PCP project funded by the European Commission.
-
-The developers would like to thank to all test owners and contributors to this project.
-
-**This test-suite has been tested on:**
-
-+------------------------------+---------------------------------------------------------------------------------+
-|Python                        | 3                                                                               |
-+------------------------------+---------------------------------------------------------------------------------+
-|Linux distros                 | Ubuntu, Centos, Coreos, Debian, RedHat, Fedora                                  |
-+------------------------------+---------------------------------------------------------------------------------+
-|OS running on provider's VMs  | Centos7                                                                         |
-+------------------------------+---------------------------------------------------------------------------------+
-|Providers                     | | Exoscale (Cloudstack)                                                         |
-|                              | | CERN Private Cloud (OpenStack)                                                |
-|                              | | Cloudscale (OpenStack)                                                        |
-+------------------------------+---------------------------------------------------------------------------------+
-
-The test suite is being tested in several additional cloud providers. As tests are concluded the cloud providers names will be added in the table above.
-
-Contact
----------------------------------------------
-For more information contact ignacio.peluaga.lozada AT cern.ch
 
 License
 ---------------------------------------------

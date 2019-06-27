@@ -98,18 +98,6 @@ def kubectl(action, arg1, arg2, more, hideLogs):
         return subprocess.call(cmd, shell=True, stdout=open(os.devnull, 'w'), stderr=subprocess.STDOUT)
     return os.system(cmd)
 
-
-def checkMLsupport():
-    """Check whether infrastructure supports ML.
-
-    Returns:
-        bool: True in case cluster supports ML (ml_stack.sh was already run), False otherwise.
-    """
-
-    pods = os.popen('kubectl get pods -n kubeflow').read()
-    return len(pods) > 0 and "No resources found." not in pods
-
-
 def writeFail(file, str):
     """Writes results file in case of errors.
 
@@ -170,64 +158,6 @@ def s3Test():
     kubectl("delete", "pod", "s3pod", None, True)
     return True, float(configs["costCalculation"]["s3bucketPrice"]) * (end - start) / 3600
 
-
-def mlTest():
-    """Run Deep Learning test -GAN training- on GPU nodes (Kubeflow, Tensorflow, MPI)."""
-
-    logger("DEEP LEARNING TEST", "=")
-    testResult = True
-
-    #########################################################################################################
-    # TODO ############################################################################################
-    writeFail("bb_train_history.json","Unable to download training data: bucket endpoint not reachable.")
-    return False,0
-    #########################################################################################################
-
-    # 1) Install the stuff needed for this test: device plugin yaml file (contains driver too) and ml_stack.sh for kubeflow and mpi
-    if checkMLsupport() is False and viaBackend is False:  # backend run assumes ml support
-        print("Preparing cluster for ML test...")
-        retries = 10
-        if os.system("../terraform/ssh_connect.sh --usr root --ip " + masterIP + " --file ml/ml_stack.sh --retries %s" % (retries)) != 0:
-            writeFail("bb_train_history.json",
-                      "Failed to prepare GPU/ML cluster (Kubeflow/Tensorflow/MPI)")
-            return False, 0
-
-    kubectl("create", "ml/device_plugin.yaml", None, None, True)
-    kubectl("create", "ml/pv-volume.yaml", None, None, True)
-
-    # 2) Deploy the required files
-    ml = testsCatalog["mlTest"]
-    if ml["nodes"] and isinstance(ml["nodes"], int) and ml["nodes"] > 1 and ml["nodes"] <= configs["general"]["clusterNodes"]:
-        nodesToUse = ml["nodes"]
-    else:
-        print("Provided value for 'nodes' not valid or it wasn't set, using all cluster nodes.")
-        nodesToUse = configs["general"]["clusterNodes"]
-    with open('ml/train-mpi_3dGAN_raw.yaml', 'r') as inputfile:
-        with open("ml/train-mpi_3dGAN.yaml", 'w') as outfile:
-            outfile.write(str(inputfile.read()).replace(
-                "REP_PH", str(nodesToUse)))
-
-    kubectl("create", "ml/3dgan-datafile-lists-configmap.yaml", None, None, True)
-
-    if kubectl("create", "ml/train-mpi_3dGAN.yaml", None, " && echo Waiting for DL results file... && sleep 70 ", False) != 0:
-        writeFail("bb_train_history.json", "Error deploying train-mpi_3dGAN.")
-        testResult = False
-    elif len(os.popen('kubectl describe pods | grep \"Insufficient nvidia.com/gpu\"').read()) > 0:
-        writeFail("bb_train_history.json",
-                  "Cluster doesn't have enough GPU support. GPU flavor required.")
-        testResult = False
-    else:
-        fetchResults(
-            "train-mpijob-worker-0:/mpi_learn/bb_train_history.json", "bb_train_history.json")
-
-    # cleanup
-    print("Cluster cleanup...")
-    kubectl("delete", "mpijob", "train-mpijob", None, True)
-    kubectl("delete", "configmap", "3dgan-datafile-lists", None, True)
-    kubectl("delete", "pv", "--all &", None, True)
-    return testResult, 0
-
-
 def dataRepatriationTest():
     """Run Data Repatriation Test -Exporting from cloud to Zenodo-"""
 
@@ -249,30 +179,6 @@ def dataRepatriationTest():
     print("Cluster cleanup...")
     kubectl("delete", "pod", "repatriation-pod", None, True)
     return True, 0
-
-
-def cpuBenchmarking():
-    """Run containerised CPU Benchmarking test. """
-
-    logger("CPU BENCHMARKING TEST", "=")
-
-    with open('cpu_benchmarking/raw/cpu_benchmarking_pod_raw.yaml', 'r') as infile:
-        with open("cpu_benchmarking/cpu_benchmarking_pod.yaml", 'w') as outfile:
-            outfile.write(infile.read().replace(
-                "PROVIDER_PH", configs["general"]["providerName"]))
-
-    if kubectl("create", "cpu_benchmarking/cpu_benchmarking_pod.yaml", None, " && echo Waiting for CPU Benchmarking results file... ", False) != 0:
-        writeFail("cpu_benchmarking.json",
-                  "Error deploying cpu_benchmarking_pod.")
-        return False, 0
-    fetchResults(
-        "cpu-benchmarking-pod:/tmp/cern-benchmark_root/bmk_tmp/result_profile.json", "cpu_benchmarking.json")
-
-    # cleanup
-    print("Cluster cleanup...")
-    kubectl("delete", "pod", "cpu-benchmarking-pod", None, True)
-    return True, 0
-
 
 def perfsonarTest():
     """Run Networking Performance test -perfSONAR toolkit- """
@@ -301,14 +207,6 @@ def perfsonarTest():
     print("Cluster cleanup...")
     kubectl("delete", "pod", "ps-pod", None, True)
     return True, 0
-
-
-def hpcTest():
-    """HPC test """
-
-    logger("HIGH PERFORMANCE COMPUTING TEST", "=")
-    print("(to be done)")
-    return False, 0
 
 
 # ----------------CMD OPTIONS---------------------------------------------------

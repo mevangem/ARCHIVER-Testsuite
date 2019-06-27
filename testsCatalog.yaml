@@ -3,16 +3,8 @@ s3Test:
   endpoint: 
   accessKey: 
   secretKey: 
-mlTest:
-  run: 
-  nodes:
 dataRepatriationTest:
-  run: 
-cpuBenchmarking:
   run: 
 perfsonarTest:
   run: 
   endpoint: 
-hpcTest:
-  run: 
-
